@@ -30,6 +30,18 @@ func InitSchema(db *sql.DB) error {
 			current_offset INT NOT NULL DEFAULT 0,
 			PRIMARY KEY (group_name, topic_name, partition_index)
 		);`,
+		`CREATE TABLE IF NOT EXISTS retry_messages (
+			id SERIAL PRIMARY KEY,
+			topic_name TEXT NOT NULL,
+			partition_index INT NOT NULL,
+			message_offset INT NOT NULL,
+			group_name TEXT NOT NULL,
+			payload TEXT NOT NULL,
+			attempts INT NOT NULL DEFAULT 0,
+			last_attempted_at TIMESTAMP NOT NULL,
+			status TEXT NOT NULL CHECK (status IN ('pending', 'processing', 'dead')),
+			UNIQUE (topic_name, group_name, partition_index, message_offset)
+		);`,
 	}
 
 	for _, q := range queries {

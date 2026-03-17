@@ -9,10 +9,10 @@ import (
 )
 
 type Handler struct {
-	s *broker.Service
+	s broker.ServiceInterface
 }
 
-func NewHandler(s *broker.Service) *Handler {
+func NewHandler(s broker.ServiceInterface) *Handler {
 	return &Handler{s: s}
 }
 
@@ -129,4 +129,32 @@ func (h *Handler) Consume(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
+}
+
+func (h *Handler) RetryMessages(w http.ResponseWriter, r *http.Request) {
+	topicName := r.PathValue("name")
+
+	var req struct {
+		GroupName      string `json:"group_name"`
+		PartitionIndex int    `json:"partition_index"`
+		Offset         int    `json:"offset"`
+		Payload        string `json:"payload"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	if req.GroupName == "" || req.Offset < 0 || req.PartitionIndex < 0 || req.Payload == "" {
+		http.Error(w, "invalid data", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.s.Retry(r.Context(), topicName, req.GroupName, req.Offset, req.PartitionIndex, req.Payload); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

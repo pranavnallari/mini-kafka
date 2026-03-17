@@ -13,6 +13,7 @@ import (
 	"github.com/prananallari/mini-kafka/internal/api"
 	"github.com/prananallari/mini-kafka/internal/broker"
 	"github.com/prananallari/mini-kafka/internal/config"
+	"github.com/prananallari/mini-kafka/internal/retry"
 	"github.com/prananallari/mini-kafka/internal/storage"
 )
 
@@ -45,6 +46,9 @@ func main() {
 	defer redisDB.Close()
 
 	serv := broker.NewService(postgresDB, redisDB)
+
+	worker := retry.NewWorker(serv, postgresDB)
+	go worker.Start(ctx)
 
 	handler := api.NewHandler(serv)
 	mux := api.NewRouter(handler)

@@ -14,6 +14,14 @@ type Service struct {
 	rdb *redis.Client
 }
 
+type ServiceInterface interface {
+	CreateTopic(ctx context.Context, name string, partitionCount int) error
+	CreateGroup(ctx context.Context, groupName string) error
+	Publish(ctx context.Context, topicName, key string, payload []byte) error
+	Consume(ctx context.Context, topicName, groupName string, partitionIndex, limit int) ([][]byte, error)
+	Retry(ctx context.Context, topicName, groupName string, offset, partitionIndex int, payload string) error
+}
+
 func NewService(db *sql.DB, rdb *redis.Client) *Service {
 	return &Service{db, rdb}
 }
@@ -112,4 +120,26 @@ func (s *Service) Consume(ctx context.Context, topicName, groupName string, part
 
 	return result, nil
 
+}
+
+func (s *Service) Retry(ctx context.Context, topicName, groupName string, offset, partitionIndex int, payload string) error {
+	query := `
+	INSERT INTO retry_messages (
+		topic_name,
+		group_name,
+		partition_index,
+		message_offset,
+		payload,
+		attempts,
+		status,
+		last_attempted_at
+	)
+	VALUES ($1, $2, $3, $4, $5, 0, 'pending', NOW())
+	ON CONFLICT (topic_name, group_name, partition_index, message_offset)
+	DO NOTHING
+	`
+
+	_, err := s.db.ExecContext(ctx, query, topicName, groupName, partitionIndex, offset, []byte(payload))
+
+	return err
 }

@@ -17,9 +17,7 @@ func Load() (*LocalConfig, error) {
 	if RedisAddr = os.Getenv("REDIS_ADDR"); RedisAddr == "" {
 		return nil, errors.New("missing env : REDIS_ADDR")
 	}
-	if RedisPassword = os.Getenv("REDIS_PASSWORD"); RedisPassword == "" {
-		return nil, errors.New("missing env : REDIS_PASSWORD")
-	}
+	RedisPassword = os.Getenv("REDIS_PASSWORD")
 	if PostgresURL = os.Getenv("POSTGRES_URL"); PostgresURL == "" {
 		return nil, errors.New("missing env : POSTGRES_URL")
 	}

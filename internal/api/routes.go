@@ -9,6 +9,6 @@ func NewRouter(h *Handler) *http.ServeMux {
 	mux.HandleFunc("POST /groups", h.CreateGroup)
 	mux.HandleFunc("POST /topics/{name}/messages", h.Publish)
 	mux.HandleFunc("GET /topics/{name}/messages", h.Consume)
-
+	mux.HandleFunc("POST /topics/{name}/messages/retry", h.RetryMessages)
 	return mux
 }
