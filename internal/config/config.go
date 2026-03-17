@@ -3,19 +3,22 @@ package config
 import (
 	"errors"
 	"os"
-	"strconv"
 )
 
 type LocalConfig struct {
-	RedisAddr   string
-	PostgresURL string
-	AppPort     int
+	RedisAddr     string
+	RedisPassword string
+	PostgresURL   string
+	AppPort       string
 }
 
 func Load() (*LocalConfig, error) {
-	var RedisAddr, PostgresURL, AppPort string
+	var RedisAddr, PostgresURL, RedisPassword, AppPort string
 	if RedisAddr = os.Getenv("REDIS_ADDR"); RedisAddr == "" {
 		return nil, errors.New("missing env : REDIS_ADDR")
+	}
+	if RedisPassword = os.Getenv("REDIS_PASSWORD"); RedisPassword == "" {
+		return nil, errors.New("missing env : REDIS_PASSWORD")
 	}
 	if PostgresURL = os.Getenv("POSTGRES_URL"); PostgresURL == "" {
 		return nil, errors.New("missing env : POSTGRES_URL")
@@ -24,14 +27,11 @@ func Load() (*LocalConfig, error) {
 		return nil, errors.New("missing env : APP_PORT")
 	}
 
-	AppPortInt, err := strconv.Atoi(AppPort)
-	if err != nil {
-		return nil, err
-	}
 	config := LocalConfig{
-		RedisAddr:   RedisAddr,
-		PostgresURL: PostgresURL,
-		AppPort:     AppPortInt,
+		RedisAddr:     RedisAddr,
+		RedisPassword: RedisPassword,
+		PostgresURL:   PostgresURL,
+		AppPort:       AppPort,
 	}
 
 	return &config, nil
